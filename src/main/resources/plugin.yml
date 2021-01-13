@@ -1,0 +1,9 @@
+name: Mesh-ExamplePlugin
+version: ${project.version}
+main: us.figt.mesh.example.ExamplePlugin
+authors: [FigT]
+description: ${project.description}
+website: ${project.url}
+commands:
+  meshexample:
+    description: Example command.
