@@ -1,7 +1,7 @@
 # Mesh
 
 
-<img src="/mesh-logo.svg" alt="logo" width="1024" height="256"/>
+<img src="/.github/mesh-logo.svg" alt="logo" width="1024" height="256"/>
 
 
 ![badge](https://img.shields.io/github/repo-size/FigT/Mesh?color=008b68)
@@ -12,7 +12,7 @@ Mesh is a library that allows you to 'mesh' together a series of tasks, whilst s
 
 
 
-## Usage
+## [Usage](https://github.com/FigT/Mesh/wiki/Usage)
 
 #### Maven
 Recommended to shade & relocate it to avoid conflicts with other plugins!
@@ -32,7 +32,8 @@ Recommended to shade & relocate it to avoid conflicts with other plugins!
 	</dependency>
 ```
 
-Browse through the code or see the [examples here](https://github.com/FigT/Mesh/tree/master/src/main/java/us/figt/mesh/example).
+Browse through the code or see examples [here](https://github.com/FigT/Mesh/tree/master/src/main/java/us/figt/mesh/example), and on the wiki page [here](https://github.com/FigT/Mesh/wiki/Usage).
+
 (More documentation and examples coming soon)
 
 ## Contributing

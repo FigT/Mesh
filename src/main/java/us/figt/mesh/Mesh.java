@@ -318,11 +318,11 @@ public class Mesh<T> {
     }
 
     /**
-     * Enables Mesh's debug mode.
+     * Toggles Mesh's debug mode.
      *
      * (ONLY USE THIS IF YOU KNOW WHAT YOU ARE DOING)
      */
-    public static void enableDebugMode() {
-        Mesh.debugMode = true;
+    public static void setDebugMode(boolean debugMode) {
+        Mesh.debugMode = debugMode;
     }
 }
