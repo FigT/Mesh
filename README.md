@@ -17,20 +17,15 @@ Mesh is a library that allows you to 'mesh' together a series of tasks, whilst s
 #### Maven
 Recommended to shade & relocate it to avoid conflicts with other plugins!
 
-```xml
-	<repository>
-	    <id>jitpack.io</id>
-	    <url>https://jitpack.io</url>
-	</repository>
-```
 
 ```xml
 	<dependency>
-	    <groupId>com.github.FigT</groupId>
+	    <groupId>us.figt</groupId>
 	    <artifactId>Mesh</artifactId>
 	    <version>VERSION</version>
 	</dependency>
 ```
+<sub>Maven repository is on [Maven Central](https://repo1.maven.org/maven2/)</sub>
 
 Browse through the code or see examples [here](https://github.com/FigT/Mesh/tree/master/src/main/java/us/figt/mesh/example), and on the wiki page [here](https://github.com/FigT/Mesh/wiki/Usage).
 

@@ -10,7 +10,9 @@
     <packaging>jar</packaging>
 
     <name>Mesh</name>
-    <description>Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts.</description>
+    <description>Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread
+        contexts.
+    </description>
     <url>https://github.com/FigT/Mesh</url>
 
     <licenses>
@@ -23,16 +25,17 @@
     <developers>
         <developer>
             <name>FigT</name>
+            <email>figt@figt.us</email>
             <url>https://github.com/FigT</url>
         </developer>
     </developers>
-
 
     <scm>
         <connection>scm:git:git://github.com/FigT/Mesh.git</connection>
         <developerConnection>scm:git:ssh://github.com:FigT/Mesh.git</developerConnection>
         <url>http://github.com/FigT/Mesh/tree/master</url>
     </scm>
+
 
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -69,6 +72,46 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -77,6 +120,17 @@
             </resource>
         </resources>
     </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <repositories>
         <repository>
