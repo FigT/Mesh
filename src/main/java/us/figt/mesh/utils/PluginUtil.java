@@ -34,7 +34,7 @@ public final class PluginUtil {
     private static JavaPlugin cachedPlugin = null;
 
     private PluginUtil() {
-        throw new AssertionError(); // seal
+        throw new AssertionError("Utility class cannot be instantiated"); // seal
     }
 
     public static JavaPlugin getPlugin() {
@@ -44,4 +44,12 @@ public final class PluginUtil {
 
         return cachedPlugin;
     }
+
+
+    public static void debugException(Throwable throwable) {
+        getPlugin().getLogger().warning("Mesh-Debug - Caught a " + throwable.getClass().getSimpleName());
+        throwable.printStackTrace();
+    }
+
+    ;
 }

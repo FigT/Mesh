@@ -5,19 +5,41 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>us.figt</groupId>
-    <artifactId>Mesh</artifactId>
-    <version>1.0.0</version>
+    <artifactId>Mesh</artifactId> <!-- not changing to lowercase due to possible incompatibility -->
+    <version>1.1.1</version>
     <packaging>jar</packaging>
 
     <name>Mesh</name>
     <description>Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts.</description>
     <url>https://github.com/FigT/Mesh</url>
 
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>FigT</name>
+            <url>https://github.com/FigT</url>
+        </developer>
+    </developers>
+
+
+    <scm>
+        <connection>scm:git:git://github.com/FigT/Mesh.git</connection>
+        <developerConnection>scm:git:ssh://github.com:FigT/Mesh.git</developerConnection>
+        <url>http://github.com/FigT/Mesh/tree/master</url>
+    </scm>
+
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
     <build>
         <plugins>
             <plugin>

@@ -39,33 +39,43 @@ final class MeshRunnables {
     static final long NO_DElAY = 0L; // const
 
     private MeshRunnables() {
-        throw new AssertionError(); // seal
+        throw new AssertionError("Container class cannot be instantiated"); // seal
     }
 
-    // should clean this up and make it more readable
     static void run(Runnable runnable, ThreadContext context, long delay) {
+        // no delay check
+        if (delay > NO_DElAY) {
+            runLater(runnable, context, delay);
+            return;
+        }
+
         switch (context) {
             case SYNC:
-                if (delay <= NO_DElAY) { // no delay check
-                    if (ThreadContext.getThreadContext(Thread.currentThread()) == ThreadContext.SYNC) {
-                        runnable.run(); // if current thread is main thread, just run the runnable
-                    } else {
-                        PluginUtil.getPlugin().getServer().getScheduler().runTask(PluginUtil.getPlugin(), runnable); // else run the task sync via BukkitScheduler
-                    }
+                if (ThreadContext.getThreadContext(Thread.currentThread()) == ThreadContext.SYNC) {
+                    runnable.run(); // if current thread is main thread, just run the runnable
                 } else {
-                    PluginUtil.getPlugin().getServer().getScheduler().runTaskLater(PluginUtil.getPlugin(), runnable, delay); // has delay
+                    PluginUtil.getPlugin().getServer().getScheduler().runTask(PluginUtil.getPlugin(), runnable); // else run the task sync via BukkitScheduler
                 }
                 break;
 
             case ASYNC:
-                if (delay <= NO_DElAY) { // no delay check
-                    PluginUtil.getPlugin().getServer().getScheduler().runTaskAsynchronously(PluginUtil.getPlugin(), runnable);
-                } else {
-                    PluginUtil.getPlugin().getServer().getScheduler().runTaskLaterAsynchronously(PluginUtil.getPlugin(), runnable, delay);
-                }
+                PluginUtil.getPlugin().getServer().getScheduler().runTaskAsynchronously(PluginUtil.getPlugin(), runnable);
                 break;
             default:
-                throw new IllegalStateException("Unexpected value: " + context); // should never occur
+                throw new IllegalStateException("Unexpected value: " + context);
+        }
+    }
+
+    private static void runLater(Runnable runnable, ThreadContext context, long delay) {
+        switch (context) {
+            case SYNC:
+                PluginUtil.getPlugin().getServer().getScheduler().runTaskLater(PluginUtil.getPlugin(), runnable, delay); // has delay
+                break;
+            case ASYNC:
+                PluginUtil.getPlugin().getServer().getScheduler().runTaskLaterAsynchronously(PluginUtil.getPlugin(), runnable, delay);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + context);
         }
     }
 
