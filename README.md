@@ -4,12 +4,12 @@
 <img src="/.github/mesh-logo.svg" alt="logo" width="1024" height="256"/>
 
 
-![badge](https://img.shields.io/github/repo-size/FigT/Mesh?color=008b68)
-![badge](https://img.shields.io/jitpack/v/github/FigT/Mesh)
-[![license](https://img.shields.io/github/license/FigT/Mesh)](LICENSE)
-
+![Maven Central Version](https://img.shields.io/maven-central/v/us.figt/Mesh?style=for-the-badge)
+![GitHub Code Size](https://img.shields.io/github/languages/code-size/FigT/Mesh?color=008b68&style=for-the-badge)
+![GitHub License](https://img.shields.io/github/license/FigT/Mesh?style=for-the-badge)
 Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts.
 
+Put more plainly, it's a Spigot-based abstraction of the CompletableFuture class.
 
 
 ## [Usage](https://github.com/FigT/Mesh/wiki/Usage)

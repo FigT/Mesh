@@ -54,6 +54,13 @@ public class Mesh<T> {
         this.completableFuture = completableFuture;
     }
 
+    private Mesh(CompletableFuture<T> completableFuture, boolean supplied, boolean cancelled) {
+        this(completableFuture);
+
+        this.hasBeenSupplied.set(supplied);
+        this.isCancelled.set(cancelled);
+    }
+
     // TODO: add more comments
 
 
@@ -77,8 +84,8 @@ public class Mesh<T> {
      * @param <T>   the type of this Mesh
      * @return the completed Mesh instance
      */
-    public static <T> Mesh createCompletedMesh(T value) {
-        Mesh mesh = new Mesh<>(CompletableFuture.completedFuture(value));
+    public static <T> Mesh<T> createCompletedMesh(T value) {
+        Mesh<T> mesh = new Mesh<>(CompletableFuture.completedFuture(value));
         mesh.hasBeenSupplied.set(true);
 
         return mesh;
@@ -449,6 +456,11 @@ public class Mesh<T> {
         }
 
         if (Mesh.debugMode) PluginUtil.debugException(throwable); // debug exception
+    }
+
+
+    public CompletableFuture<T> toCompletableFuture() {
+        return completableFuture.thenApply(Function.identity());
     }
 
 

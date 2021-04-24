@@ -33,7 +33,7 @@
     <scm>
         <connection>scm:git:git://github.com/FigT/Mesh.git</connection>
         <developerConnection>scm:git:ssh://github.com:FigT/Mesh.git</developerConnection>
-        <url>http://github.com/FigT/Mesh/tree/master</url>
+        <url>https://github.com/FigT/Mesh/tree/master</url>
     </scm>
 
 
