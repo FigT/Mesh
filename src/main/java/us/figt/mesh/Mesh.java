@@ -548,12 +548,12 @@ public class Mesh<T> {
         return newMesh;
     }
 
-    public AtomicBoolean getIsCancelled() {
-        return isCancelled;
+    public boolean isCancelled() {
+        return isCancelled.get();
     }
 
-    public AtomicBoolean getHasBeenSupplied() {
-        return hasBeenSupplied;
+    public boolean hasBeenSupplied() {
+        return hasBeenSupplied.get();
     }
 
     CompletableFuture<T> getCompletableFuture() {
