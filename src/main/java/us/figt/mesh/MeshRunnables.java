@@ -95,7 +95,7 @@ final class MeshRunnables {
 
         @Override
         public void run() {
-            if (!mesh.getIsCancelled().get()) {
+            if (!mesh.isCancelled()) {
                 try {
                     onComplete();
                     mesh.complete(getCompleteValue());
@@ -203,7 +203,7 @@ final class MeshRunnables {
 
         @Override
         public void run() {
-            if (!mesh.getIsCancelled().get()) {
+            if (!mesh.isCancelled()) {
                 try {
                     Mesh<R> applied = function.apply(value);
                     if (applied != null) {
