@@ -27,7 +27,7 @@ package us.figt.mesh;
 import us.figt.mesh.utils.PluginUtil;
 import us.figt.mesh.utils.ThreadContext;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -156,7 +156,54 @@ public class Mesh<T> {
     }
 
 
-    // ASYNC BELOW:
+    /**
+     * Creates a Mesh based on the given Future.
+     *
+     * @param future the Future to base this Mesh on
+     * @param <R>    the type of the given Future and this Mesh
+     * @return the new Mesh instance
+     */
+    public static <R> Mesh<R> fromFuture(Future<R> future) {
+        // TODO: add comments to this method
+
+        if (future instanceof CompletableFuture<?>) {
+            return new Mesh<>(((CompletableFuture<R>) future).thenApply(Function.identity()), true, future.isCancelled());
+        }
+
+        if (future instanceof CompletionStage<?>) {
+            CompletionStage<R> stage = (CompletionStage<R>) future;
+
+            return new Mesh<>(stage.toCompletableFuture().thenApply(Function.identity()));
+        }
+
+        if (future.isDone()) {
+            try {
+                // if the future is done, just create a completed mesh based on the future's value
+                return createCompletedMesh(future.get());
+            } catch (ExecutionException e) {
+                // if the computation threw an exception, create a new CompletableFuture
+                CompletableFuture<R> newFuture = new CompletableFuture<>();
+
+                // complete exceptionally using the ExecutionException thrown
+                newFuture.completeExceptionally(e);
+
+
+                // return a new Mesh based on that future
+                return new Mesh<R>(newFuture, true, false);
+            } catch (InterruptedException e) {
+                // uh-oh
+                PluginUtil.debugException(e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        Mesh<R> newMesh = createMesh();
+        return newMesh.supplyCallableAsync(future::get);
+    }
+
+
+    // ~~~ ASYNC BELOW ~~~
+
 
     /**
      * Supplies this Mesh with a value <strong>asynchronously</strong>.
@@ -222,7 +269,19 @@ public class Mesh<T> {
         return compose(function, ASYNC, NO_DElAY);
     }
 
-    // DELAYED ASYNC BELOW
+    /**
+     * Supplies this Mesh with a value (given by a Callable) <strong>asynchronously</strong>.
+     *
+     * @param callable the value to supply
+     * @return the supplied Mesh instance
+     */
+    public Mesh<T> supplyCallableAsync(Callable<T> callable) {
+        return supplyCallable(callable, ASYNC, NO_DElAY);
+    }
+
+
+    // ~~~ DELAYED ASYNC BELOW ~~~
+
 
     /**
      * Supplies this Mesh with a value <strong>asynchronously</strong>.
@@ -294,8 +353,20 @@ public class Mesh<T> {
         return compose(function, ASYNC, delay);
     }
 
+    /**
+     * Supplies this Mesh with a value (given by a Callable) <strong>asynchronously</strong>.
+     *
+     * @param callable the value to supply
+     * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
+     * @return the supplied Mesh instance
+     */
+    public Mesh<T> supplyCallableAsyncDelayed(Callable<T> callable, long delay) {
+        return supplyCallable(callable, ASYNC, delay);
+    }
 
-    // SYNC BELOW:
+
+    // ~~~ SYNC BELOW ~~~
+
 
     /**
      * Supplies this Mesh with a value <strong>synchronously</strong>.
@@ -361,7 +432,19 @@ public class Mesh<T> {
         return compose(function, SYNC, NO_DElAY);
     }
 
-    // DELAYED SYNC BELOW
+    /**
+     * Supplies this Mesh with a value (given by a Callable) <strong>synchronously</strong>.
+     *
+     * @param callable the value to supply
+     * @return the supplied Mesh instance
+     */
+    public Mesh<T> supplyCallableSync(Callable<T> callable) {
+        return supplyCallable(callable, SYNC, NO_DElAY);
+    }
+
+
+    // ~~~ DELAYED SYNC BELOW ~~~
+
 
     /**
      * Supplies this Mesh with a value <strong>synchronously</strong>.
@@ -431,6 +514,17 @@ public class Mesh<T> {
      */
     public <R> Mesh<R> composeSyncDelayed(Function<? super T, ? extends Mesh<R>> function, long delay) {
         return compose(function, SYNC, delay);
+    }
+
+    /**
+     * Supplies this Mesh with a value (given by a Callable) <strong>synchronously</strong>.
+     *
+     * @param callable the value to supply
+     * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
+     * @return the supplied Mesh instance
+     */
+    public Mesh<T> supplyCallableSyncDelayed(Callable<T> callable, long delay) {
+        return supplyCallable(callable, SYNC, delay);
     }
 
 
@@ -546,6 +640,13 @@ public class Mesh<T> {
         });
 
         return newMesh;
+    }
+
+    private Mesh<T> supplyCallable(Callable<T> callable, ThreadContext threadContext, long delay) {
+        setHasBeenSupplied();
+        MeshRunnables.run(new MeshRunnables.CallableRunnable<>(this, callable), threadContext, delay);
+
+        return this;
     }
 
     public boolean isCancelled() {

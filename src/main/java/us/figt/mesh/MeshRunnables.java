@@ -27,6 +27,7 @@ package us.figt.mesh;
 import us.figt.mesh.utils.PluginUtil;
 import us.figt.mesh.utils.ThreadContext;
 
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -81,16 +82,20 @@ final class MeshRunnables {
 
     public static abstract class AbstractWrappedRunnable<T> implements Runnable {
 
-        private final Mesh<? super T> mesh;
+        final Mesh<? super T> mesh;
 
         private AbstractWrappedRunnable(Mesh<? super T> mesh) {
             this.mesh = mesh;
         }
 
-        public abstract T getCompleteValue();
+        public abstract T getCompleteValue() throws Exception;
 
         void onComplete() {
 
+        }
+
+        boolean shouldNormalComplete() {
+            return true;
         }
 
         @Override
@@ -98,7 +103,7 @@ final class MeshRunnables {
             if (!mesh.isCancelled()) {
                 try {
                     onComplete();
-                    mesh.complete(getCompleteValue());
+                    if (shouldNormalComplete()) mesh.complete(getCompleteValue());
                 } catch (Throwable throwable) {
                     mesh.completeExceptionally(throwable);
                 }
@@ -186,35 +191,50 @@ final class MeshRunnables {
         }
     }
 
-    public static class ComposeRunnable<R, T> implements Runnable {
+    public static class CallableRunnable<T> extends AbstractWrappedRunnable<T> {
 
-        private final Mesh<R> mesh;
+        private final Callable<T> callable;
+
+        CallableRunnable(Mesh<T> mesh, Callable<T> callable) {
+            super(mesh);
+            this.callable = callable;
+        }
+
+
+        @Override
+        public T getCompleteValue() throws Exception {
+            return this.callable.call();
+        }
+    }
+
+    public static class ComposeRunnable<R, T> extends AbstractWrappedRunnable<R> {
+
         private final Function<? super T, ? extends Mesh<R>> function;
         private final T value;
         private final ThreadContext threadContext;
 
 
         ComposeRunnable(Mesh<R> mesh, Function<? super T, ? extends Mesh<R>> function, T value, ThreadContext threadContext) {
-            this.mesh = mesh;
+            super(mesh);
             this.function = function;
             this.value = value;
             this.threadContext = threadContext;
         }
 
         @Override
-        public void run() {
-            if (!mesh.isCancelled()) {
-                try {
-                    Mesh<R> applied = function.apply(value);
-                    if (applied != null) {
-                        applied.accept(mesh::complete, threadContext, NO_DElAY);
-                    } else {
-                        mesh.complete(null);
-                    }
-                } catch (Throwable throwable) {
-                    mesh.completeExceptionally(throwable);
-                }
+        public R getCompleteValue() {
+            return null;
+        }
+
+        @Override
+        boolean shouldNormalComplete() {
+            Mesh<R> applied = function.apply(value);
+
+            if (applied != null) {
+                applied.accept(mesh::complete, threadContext, NO_DElAY);
             }
+
+            return applied == null;
         }
     }
 }
