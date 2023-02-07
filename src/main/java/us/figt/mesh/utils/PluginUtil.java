@@ -45,6 +45,10 @@ public final class PluginUtil {
         return cachedPlugin;
     }
 
+    public static void setPlugin(JavaPlugin plugin) {
+        PluginUtil.cachedPlugin = plugin;
+    }
+
 
     public static void debugException(Throwable throwable) {
         getPlugin().getLogger().warning("Mesh-Debug - Caught a " + throwable.getClass().getSimpleName());
