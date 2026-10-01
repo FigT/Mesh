@@ -1,30 +1,9 @@
-/*
- * MIT License
- *
- * Copyright (c) 2021 FigT
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 package us.figt.mesh;
 
-import us.figt.mesh.utils.PluginUtil;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
 import java.util.concurrent.*;
@@ -33,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static us.figt.mesh.MeshRunnables.NO_DElAY;
+import static us.figt.mesh.utils.TaskBackend.NO_DELAY;
 import static us.figt.mesh.utils.ThreadContext.ASYNC;
 import static us.figt.mesh.utils.ThreadContext.SYNC;
 
@@ -43,19 +22,18 @@ import static us.figt.mesh.utils.ThreadContext.SYNC;
 @SuppressWarnings("unused") // i don't want IntelliJ to yell at me
 public class Mesh<T> {
 
-    private static boolean debugMode = false;
+    private final @NotNull TaskBackend backend;
+    private final @NotNull CompletableFuture<T> completableFuture; // the backing CompletableFuture
+    private final @NotNull AtomicBoolean hasBeenSupplied = new AtomicBoolean(false);
+    private final @NotNull AtomicBoolean isCancelled = new AtomicBoolean(false);
 
-
-    private final CompletableFuture<T> completableFuture; // the backing CompletableFuture
-    private final AtomicBoolean hasBeenSupplied = new AtomicBoolean(false);
-    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
-
-    private Mesh(CompletableFuture<T> completableFuture) {
+    protected Mesh(@NotNull TaskBackend backend, @NotNull CompletableFuture<T> completableFuture) {
+        this.backend = backend;
         this.completableFuture = completableFuture;
     }
 
-    private Mesh(CompletableFuture<T> completableFuture, boolean supplied, boolean cancelled) {
-        this(completableFuture);
+    protected Mesh(@NotNull TaskBackend backend, @NotNull CompletableFuture<T> completableFuture, boolean supplied, boolean cancelled) {
+        this(backend, completableFuture);
 
         this.hasBeenSupplied.set(supplied);
         this.isCancelled.set(cancelled);
@@ -64,142 +42,9 @@ public class Mesh<T> {
     // TODO: add more comments
 
 
-    /**
-     * Creates an already 'completed' Mesh instance.
-     *
-     * @param <T> the type of this Mesh
-     * @return the completed Mesh instance
-     */
-    public static <T> Mesh<T> createCompletedMesh() {
-        Mesh<T> mesh = new Mesh<>(CompletableFuture.completedFuture(null));
-        mesh.hasBeenSupplied.set(true);
-
-        return mesh;
-    }
-
-    /**
-     * Creates an already 'completed' Mesh instance with a supplied value.
-     *
-     * @param value the value to supply this completed Mesh with
-     * @param <T>   the type of this Mesh
-     * @return the completed Mesh instance
-     */
-    public static <T> Mesh<T> createCompletedMesh(T value) {
-        Mesh<T> mesh = new Mesh<>(CompletableFuture.completedFuture(value));
-        mesh.hasBeenSupplied.set(true);
-
-        return mesh;
-    }
-
-    /**
-     * Creates a fresh Mesh instance which you can then supply, and complete later.
-     *
-     * @param <T> the type of this Mesh
-     * @return the Mesh instance
-     */
-    public static <T> Mesh<T> createMesh() {
-        return new Mesh<>(new CompletableFuture<>());
-    }
-
-    /**
-     * Creates a fresh Mesh instance and then supplies it (<strong>synchronously</strong>), which you can then complete later.
-     *
-     * @param supplier the value to supply
-     * @param <T>      the type of this Mesh
-     * @return the supplied Mesh instance
-     */
-    public static <T> Mesh<T> createSupplyingSyncMesh(Supplier<T> supplier) {
-        Mesh<T> mesh = createMesh();
-
-        return mesh.supplySync(supplier);
-    }
-
-    /**
-     * Creates a fresh Mesh instance and then supplies it (<strong>synchronously</strong>) after a delay, which you can then complete later.
-     *
-     * @param supplier the value to supply
-     * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
-     * @param <T>      the type of this Mesh
-     * @return the supplied Mesh instance
-     */
-    public static <T> Mesh<T> createSupplyingSyncDelayedMesh(Supplier<T> supplier, long delay) {
-        Mesh<T> mesh = createMesh();
-
-        return mesh.supplySyncDelayed(supplier, delay);
-    }
-
-    /**
-     * Creates a fresh Mesh instance and then supplies it (<strong>asynchronously</strong>), which you can then complete later.
-     *
-     * @param supplier the value to supply
-     * @param <T>      the type of this Mesh
-     * @return the supplied Mesh instance
-     */
-    public static <T> Mesh<T> createSupplyingAsyncMesh(Supplier<T> supplier) {
-        Mesh<T> mesh = createMesh();
-
-        return mesh.supplyAsync(supplier);
-    }
-
-    /**
-     * Creates a fresh Mesh instance and then supplies it (<strong>asynchronously</strong>) after a delay, which you can then complete later.
-     *
-     * @param supplier the value to supply
-     * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
-     * @param <T>      the type of this Mesh
-     * @return the supplied Mesh instance
-     */
-    public static <T> Mesh<T> createSupplyingAsyncDelayedMesh(Supplier<T> supplier, long delay) {
-        Mesh<T> mesh = createMesh();
-
-        return mesh.supplyAsyncDelayed(supplier, delay);
-    }
 
 
-    /**
-     * Creates a Mesh based on the given Future.
-     *
-     * @param future the Future to base this Mesh on
-     * @param <R>    the type of the given Future and this Mesh
-     * @return the new Mesh instance
-     */
-    public static <R> Mesh<R> fromFuture(Future<R> future) {
-        // TODO: add comments to this method
 
-        if (future instanceof CompletableFuture<?>) {
-            return new Mesh<>(((CompletableFuture<R>) future).thenApply(Function.identity()), true, future.isCancelled());
-        }
-
-        if (future instanceof CompletionStage<?>) {
-            CompletionStage<R> stage = (CompletionStage<R>) future;
-
-            return new Mesh<>(stage.toCompletableFuture().thenApply(Function.identity()));
-        }
-
-        if (future.isDone()) {
-            try {
-                // if the future is done, just create a completed mesh based on the future's value
-                return createCompletedMesh(future.get());
-            } catch (ExecutionException e) {
-                // if the computation threw an exception, create a new CompletableFuture
-                CompletableFuture<R> newFuture = new CompletableFuture<>();
-
-                // complete exceptionally using the ExecutionException thrown
-                newFuture.completeExceptionally(e);
-
-
-                // return a new Mesh based on that future
-                return new Mesh<R>(newFuture, true, false);
-            } catch (InterruptedException e) {
-                // uh-oh
-                PluginUtil.debugException(e);
-                throw new RuntimeException(e);
-            }
-        }
-
-        Mesh<R> newMesh = createMesh();
-        return newMesh.supplyCallableAsync(future::get);
-    }
 
 
     // ~~~ ASYNC BELOW ~~~
@@ -211,8 +56,8 @@ public class Mesh<T> {
      * @param supplier the value to supply
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplyAsync(Supplier<T> supplier) {
-        return supply(supplier, ASYNC, NO_DElAY);
+    public @NotNull Mesh<T> supplyAsync(@NotNull Supplier<T> supplier) {
+        return supply(supplier, ASYNC, NO_DELAY);
     }
 
     /**
@@ -221,8 +66,8 @@ public class Mesh<T> {
      * @param runnable the runnable to run
      * @return this Mesh instance
      */
-    public Mesh<Void> runAsync(Runnable runnable) {
-        return applyRun(runnable, ASYNC, NO_DElAY);
+    public @NotNull Mesh<Void> runAsync(@NotNull Runnable runnable) {
+        return applyRun(runnable, ASYNC, NO_DELAY);
     }
 
     /**
@@ -232,8 +77,8 @@ public class Mesh<T> {
      * @param <R>      the type of the function's result
      * @return this Mesh instance with the applied function
      */
-    public <R> Mesh<R> applyAsync(Function<? super T, ? extends R> function) {
-        return apply(function, ASYNC, NO_DElAY);
+    public <R> @NotNull Mesh<R> applyAsync(@NotNull Function<? super T, ? extends R> function) {
+        return apply(function, ASYNC, NO_DELAY);
     }
 
     /**
@@ -242,8 +87,8 @@ public class Mesh<T> {
      * @param consumer the action to run
      * @return this Mesh instance with Void return type
      */
-    public Mesh<Void> acceptAsync(Consumer<T> consumer) {
-        return accept(consumer, ASYNC, NO_DElAY);
+    public @NotNull Mesh<Void> acceptAsync(@NotNull Consumer<T> consumer) {
+        return accept(consumer, ASYNC, NO_DELAY);
     }
 
     /**
@@ -252,21 +97,19 @@ public class Mesh<T> {
      * @param function the function to execute
      * @return this Mesh instance with the applied function
      */
-    public Mesh<T> exceptionallyAsync(Function<Throwable, ? extends T> function) {
-        return exceptionally(function, ASYNC, NO_DElAY);
+    public @NotNull Mesh<T> exceptionallyAsync(@NotNull Function<Throwable, ? extends T> function) {
+        return exceptionally(function, ASYNC, NO_DELAY);
     }
 
     /**
      * Creates a new Mesh that, when this Mesh completes normally, is executed (<strong>asynchronously</strong>) with this Mesh's result as the argument to the supplied function.
-     * <p>
-     * (alt description: When this Mesh completes normally, the returned Mesh will execute (<strong>asynchronously</strong>) with this Mesh's result as the argument to the supplied function.)
      *
      * @param function the function to execute
      * @param <R>      the type of the returned Mesh's result
      * @return the new Mesh instance
      */
-    public <R> Mesh<R> composeAsync(Function<? super T, ? extends Mesh<R>> function) {
-        return compose(function, ASYNC, NO_DElAY);
+    public <R> @NotNull Mesh<R> composeAsync(@NotNull Function<? super T, ? extends Mesh<R>> function) {
+        return compose(function, ASYNC, NO_DELAY);
     }
 
     /**
@@ -275,8 +118,8 @@ public class Mesh<T> {
      * @param callable the value to supply
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplyCallableAsync(Callable<T> callable) {
-        return supplyCallable(callable, ASYNC, NO_DElAY);
+    public @NotNull Mesh<T> supplyCallableAsync(@NotNull Callable<T> callable) {
+        return supplyCallable(callable, ASYNC, NO_DELAY);
     }
 
 
@@ -290,7 +133,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplyAsyncDelayed(Supplier<T> supplier, long delay) {
+    public @NotNull Mesh<T> supplyAsyncDelayed(@NotNull Supplier<T> supplier, long delay) {
         return supply(supplier, ASYNC, delay);
     }
 
@@ -301,7 +144,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to execute the runnable
      * @return this Mesh instance
      */
-    public Mesh<Void> runAsyncDelayed(Runnable runnable, long delay) {
+    public @NotNull Mesh<Void> runAsyncDelayed(@NotNull Runnable runnable, long delay) {
         return applyRun(runnable, ASYNC, delay);
     }
 
@@ -313,7 +156,7 @@ public class Mesh<T> {
      * @param <R>      the type of the function's result
      * @return this Mesh instance with the applied function
      */
-    public <R> Mesh<R> applyAsyncDelayed(Function<? super T, ? extends R> function, long delay) {
+    public <R> @NotNull Mesh<R> applyAsyncDelayed(@NotNull Function<? super T, ? extends R> function, long delay) {
         return apply(function, ASYNC, delay);
     }
 
@@ -324,7 +167,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to run the action
      * @return this Mesh instance with Void return type
      */
-    public Mesh<Void> acceptAsyncDelayed(Consumer<T> consumer, long delay) {
+    public @NotNull Mesh<Void> acceptAsyncDelayed(@NotNull Consumer<T> consumer, long delay) {
         return accept(consumer, ASYNC, delay);
     }
 
@@ -335,21 +178,19 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to execute the function
      * @return this Mesh instance with the applied function
      */
-    public Mesh<T> exceptionallyAsyncDelayed(Function<Throwable, ? extends T> function, long delay) {
+    public @NotNull Mesh<T> exceptionallyAsyncDelayed(@NotNull Function<Throwable, ? extends T> function, long delay) {
         return exceptionally(function, ASYNC, delay);
     }
 
     /**
      * Creates a new Mesh that, when this Mesh completes normally, is executed (<strong>asynchronously</strong>) with this Mesh's result as the argument to the supplied function.
-     * <p>
-     * (alt description: When this Mesh completes normally, the returned Mesh will execute (<strong>asynchronously</strong>) with this Mesh's result as the argument to the supplied function.)
      *
      * @param function the function to execute
      * @param delay    the delay (<strong>in ticks</strong>) to wait to execute the function
      * @param <R>      the type of the returned Mesh's result
      * @return the new Mesh instance
      */
-    public <R> Mesh<R> composeAsyncDelayed(Function<? super T, ? extends Mesh<R>> function, long delay) {
+    public <R> @NotNull Mesh<R> composeAsyncDelayed(@NotNull Function<? super T, ? extends Mesh<R>> function, long delay) {
         return compose(function, ASYNC, delay);
     }
 
@@ -360,7 +201,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplyCallableAsyncDelayed(Callable<T> callable, long delay) {
+    public @NotNull Mesh<T> supplyCallableAsyncDelayed(@NotNull Callable<T> callable, long delay) {
         return supplyCallable(callable, ASYNC, delay);
     }
 
@@ -374,8 +215,8 @@ public class Mesh<T> {
      * @param supplier the value to supply
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplySync(Supplier<T> supplier) {
-        return supply(supplier, SYNC, NO_DElAY);
+    public @NotNull Mesh<T> supplySync(@NotNull Supplier<T> supplier) {
+        return supply(supplier, SYNC, NO_DELAY);
     }
 
     /**
@@ -384,8 +225,8 @@ public class Mesh<T> {
      * @param runnable the runnable to run
      * @return this Mesh instance
      */
-    public Mesh<Void> runSync(Runnable runnable) {
-        return applyRun(runnable, SYNC, NO_DElAY);
+    public @NotNull Mesh<Void> runSync(@NotNull Runnable runnable) {
+        return applyRun(runnable, SYNC, NO_DELAY);
     }
 
     /**
@@ -395,8 +236,8 @@ public class Mesh<T> {
      * @param <R>      the type of the function's result
      * @return this Mesh instance with the applied function
      */
-    public <R> Mesh<R> applySync(Function<? super T, ? extends R> function) {
-        return apply(function, SYNC, NO_DElAY);
+    public <R> @NotNull Mesh<R> applySync(@NotNull Function<? super T, ? extends R> function) {
+        return apply(function, SYNC, NO_DELAY);
     }
 
     /**
@@ -405,8 +246,8 @@ public class Mesh<T> {
      * @param consumer the action to run
      * @return this Mesh instance with Void return type
      */
-    public Mesh<Void> acceptSync(Consumer<T> consumer) {
-        return accept(consumer, SYNC, NO_DElAY);
+    public @NotNull Mesh<Void> acceptSync(@NotNull Consumer<T> consumer) {
+        return accept(consumer, SYNC, NO_DELAY);
     }
 
     /**
@@ -415,21 +256,19 @@ public class Mesh<T> {
      * @param function the function to execute
      * @return this Mesh instance with the applied function
      */
-    public Mesh<T> exceptionallySync(Function<Throwable, ? extends T> function) {
-        return exceptionally(function, SYNC, NO_DElAY);
+    public @NotNull Mesh<T> exceptionallySync(@NotNull Function<Throwable, ? extends T> function) {
+        return exceptionally(function, SYNC, NO_DELAY);
     }
 
     /**
      * Creates a new Mesh that, when this Mesh completes normally, is executed (<strong>synchronously</strong>) with this Mesh's result as the argument to the supplied function.
-     * <p>
-     * (alt description: When this Mesh completes normally, the returned Mesh will execute (<strong>synchronously</strong>) with this Mesh's result as the argument to the supplied function.)
      *
      * @param function the function to execute
      * @param <R>      the type of the returned Mesh's result
      * @return the new Mesh instance
      */
-    public <R> Mesh<R> composeSync(Function<? super T, ? extends Mesh<R>> function) {
-        return compose(function, SYNC, NO_DElAY);
+    public <R> @NotNull Mesh<R> composeSync(@NotNull Function<? super T, ? extends Mesh<R>> function) {
+        return compose(function, SYNC, NO_DELAY);
     }
 
     /**
@@ -438,8 +277,8 @@ public class Mesh<T> {
      * @param callable the value to supply
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplyCallableSync(Callable<T> callable) {
-        return supplyCallable(callable, SYNC, NO_DElAY);
+    public @NotNull Mesh<T> supplyCallableSync(@NotNull Callable<T> callable) {
+        return supplyCallable(callable, SYNC, NO_DELAY);
     }
 
 
@@ -453,7 +292,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplySyncDelayed(Supplier<T> supplier, long delay) {
+    public @NotNull Mesh<T> supplySyncDelayed(@NotNull Supplier<T> supplier, long delay) {
         return supply(supplier, SYNC, delay);
     }
 
@@ -464,7 +303,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to execute the runnable
      * @return this Mesh instance
      */
-    public Mesh<Void> runSyncDelayed(Runnable runnable, long delay) {
+    public @NotNull Mesh<Void> runSyncDelayed(@NotNull Runnable runnable, long delay) {
         return applyRun(runnable, SYNC, delay);
     }
 
@@ -476,7 +315,7 @@ public class Mesh<T> {
      * @param <R>      the type of the function's result
      * @return this Mesh instance with the applied function
      */
-    public <R> Mesh<R> applySyncDelayed(Function<? super T, ? extends R> function, long delay) {
+    public <R> @NotNull Mesh<R> applySyncDelayed(@NotNull Function<? super T, ? extends R> function, long delay) {
         return apply(function, SYNC, delay);
     }
 
@@ -487,7 +326,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to run the action
      * @return this Mesh instance with Void return type
      */
-    public Mesh<Void> acceptSyncDelayed(Consumer<T> consumer, long delay) {
+    public @NotNull Mesh<Void> acceptSyncDelayed(@NotNull Consumer<T> consumer, long delay) {
         return accept(consumer, SYNC, delay);
     }
 
@@ -498,21 +337,19 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to execute the function
      * @return this Mesh instance with the applied function
      */
-    public Mesh<T> exceptionallySyncDelayed(Function<Throwable, ? extends T> function, long delay) {
+    public @NotNull Mesh<T> exceptionallySyncDelayed(@NotNull Function<Throwable, ? extends T> function, long delay) {
         return exceptionally(function, SYNC, delay);
     }
 
     /**
      * Creates a new Mesh that, when this Mesh completes normally, is executed (<strong>synchronously</strong>) with this Mesh's result as the argument to the supplied function.
-     * <p>
-     * (alt description: When this Mesh completes normally, the returned Mesh will execute (<strong>synchronously</strong>) with this Mesh's result as the argument to the supplied function.)
      *
      * @param function the function to execute
      * @param delay    the delay (<strong>in ticks</strong>) to wait to execute the function
      * @param <R>      the type of the returned Mesh's result
      * @return the new Mesh instance
      */
-    public <R> Mesh<R> composeSyncDelayed(Function<? super T, ? extends Mesh<R>> function, long delay) {
+    public <R> @NotNull Mesh<R> composeSyncDelayed(@NotNull Function<? super T, ? extends Mesh<R>> function, long delay) {
         return compose(function, SYNC, delay);
     }
 
@@ -523,7 +360,7 @@ public class Mesh<T> {
      * @param delay    the delay (<strong>in ticks</strong>) to wait to supply this Mesh
      * @return the supplied Mesh instance
      */
-    public Mesh<T> supplyCallableSyncDelayed(Callable<T> callable, long delay) {
+    public @NotNull Mesh<T> supplyCallableSyncDelayed(@NotNull Callable<T> callable, long delay) {
         return supplyCallable(callable, SYNC, delay);
     }
 
@@ -533,7 +370,7 @@ public class Mesh<T> {
      *
      * @param value the value to complete this Mesh with
      */
-    public void complete(T value) {
+    public void complete(@Nullable T value) {
         if (!isCancelled.get()) {
             completableFuture.complete(value);
         }
@@ -544,16 +381,16 @@ public class Mesh<T> {
      *
      * @param throwable the exception
      */
-    public void completeExceptionally(Throwable throwable) {
+    public void completeExceptionally(@NotNull Throwable throwable) {
         if (!isCancelled.get()) {
             completableFuture.completeExceptionally(throwable);
         }
 
-        if (Mesh.debugMode) PluginUtil.debugException(throwable); // debug exception
+        if (backend.isDebugMode()) backend.debugException(throwable); // debug exception
     }
 
 
-    public CompletableFuture<T> toCompletableFuture() {
+    public @NotNull CompletableFuture<T> toCompletableFuture() {
         return completableFuture.thenApply(Function.identity());
     }
 
@@ -567,17 +404,17 @@ public class Mesh<T> {
 
     private Mesh<T> supply(Supplier<T> supplier, ThreadContext threadContext, long delay) {
         setHasBeenSupplied();
-        MeshRunnables.run(new MeshRunnables.SupplierRunnable<>(this, supplier), threadContext, delay);
+        backend.run(new MeshRunnables.SuppliableRunnable<>(this, supplier), threadContext, delay);
 
         return this;
     }
 
     private <R> Mesh<R> apply(Function<? super T, ? extends R> function, ThreadContext threadContext, long delay) {
-        Mesh<R> newMesh = new Mesh<>(new CompletableFuture<>());
+        Mesh<R> newMesh = new Mesh<>(backend, new CompletableFuture<>());
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                MeshRunnables.run(new MeshRunnables.FunctionRunnable<>(newMesh, function, value), threadContext, delay);
+                backend.run(new MeshRunnables.FunctionalRunnable<>(newMesh, function, value), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -587,11 +424,11 @@ public class Mesh<T> {
     }
 
     private <R> Mesh<R> applyRun(Runnable runnable, ThreadContext threadContext, long delay) {
-        Mesh<R> newMesh = new Mesh<>(new CompletableFuture<>());
+        Mesh<R> newMesh = new Mesh<>(backend, new CompletableFuture<>());
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                MeshRunnables.run(new MeshRunnables.WrappedRunnable<>(newMesh, runnable), threadContext, delay);
+                backend.run(new MeshRunnables.AppliableRunnable<>(newMesh, runnable), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -600,12 +437,13 @@ public class Mesh<T> {
         return newMesh;
     }
 
-    <R> Mesh<R> accept(Consumer<T> consumer, ThreadContext threadContext, long delay) {
-        Mesh<R> newMesh = new Mesh<>(new CompletableFuture<>());
+    @ApiStatus.Internal
+     <R> Mesh<R> accept(Consumer<T> consumer, ThreadContext threadContext, long delay) {
+        Mesh<R> newMesh = new Mesh<>(backend, new CompletableFuture<>());
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                MeshRunnables.run(new MeshRunnables.ConsumerRunnable<>(newMesh, consumer, value), threadContext, delay);
+                backend.run(new MeshRunnables.ConsumableRunnable<>(newMesh, consumer, value), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -615,13 +453,13 @@ public class Mesh<T> {
     }
 
     private Mesh<T> exceptionally(Function<Throwable, ? extends T> function, ThreadContext threadContext, long delay) {
-        Mesh<T> newMesh = new Mesh<>(new CompletableFuture<>());
+        Mesh<T> newMesh = new Mesh<>(backend, new CompletableFuture<>());
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
                 newMesh.complete(value);
             } else {
-                MeshRunnables.run(new MeshRunnables.FunctionRunnable<>(newMesh, function, throwable), threadContext, delay);
+                backend.run(new MeshRunnables.FunctionalRunnable<>(newMesh, function, throwable), threadContext, delay);
             }
         });
 
@@ -629,11 +467,11 @@ public class Mesh<T> {
     }
 
     private <R> Mesh<R> compose(Function<? super T, ? extends Mesh<R>> function, ThreadContext threadContext, long delay) {
-        Mesh<R> newMesh = new Mesh<>(new CompletableFuture<>());
+        Mesh<R> newMesh = new Mesh<>(backend, new CompletableFuture<>());
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                MeshRunnables.run(new MeshRunnables.ComposeRunnable<>(newMesh, function, value, threadContext), threadContext, delay);
+                backend.run(new MeshRunnables.ComposableRunnable<>(newMesh, function, value, threadContext), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -644,9 +482,13 @@ public class Mesh<T> {
 
     private Mesh<T> supplyCallable(Callable<T> callable, ThreadContext threadContext, long delay) {
         setHasBeenSupplied();
-        MeshRunnables.run(new MeshRunnables.CallableRunnable<>(this, callable), threadContext, delay);
+        backend.run(new MeshRunnables.CallableRunnable<>(this, callable), threadContext, delay);
 
         return this;
+    }
+
+    protected @NotNull AtomicBoolean getHasBeenSupplied() {
+        return hasBeenSupplied;
     }
 
     public boolean isCancelled() {
@@ -655,18 +497,5 @@ public class Mesh<T> {
 
     public boolean hasBeenSupplied() {
         return hasBeenSupplied.get();
-    }
-
-    CompletableFuture<T> getCompletableFuture() {
-        return completableFuture;
-    }
-
-    /**
-     * Sets Mesh's debug mode to the specified value.
-     *
-     * @param debugMode if debug mode is enabled or not
-     */
-    public static void setDebugMode(boolean debugMode) {
-        Mesh.debugMode = debugMode;
     }
 }

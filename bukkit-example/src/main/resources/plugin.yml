@@ -1,0 +1,7 @@
+name: mesh-bukkit-example
+main: us.figt.mesh.bukkit.example.ExamplePlugin
+version: ${version}
+commands:
+  mesh-example:
+    usage: /<command>
+    description: Runs an example Mesh
