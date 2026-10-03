@@ -4,7 +4,7 @@ plugins {
 
 rootProject.name = "mesh"
 
-sequenceOf("common", "bukkit", "bukkit-example").forEach { projectName ->
+sequenceOf("common", "bukkit", "bukkit-example", "velocity").forEach { projectName ->
     include("mesh-$projectName")
     project(":mesh-$projectName").projectDir = file(projectName)
 }
