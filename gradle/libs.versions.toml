@@ -3,7 +3,12 @@
 # utilities
 jetbrains-annotations = "24.1.0"
 
+# platforms
+spigot-api = "1.13.2-R0.1-SNAPSHOT"
+
 [libraries]
 # utilities
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 
+# platforms
+spigot-api = { module = "org.spigotmc:spigot-api", version.ref = "spigot-api" }
