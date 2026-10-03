@@ -35,7 +35,6 @@ public final class ExamplePlugin extends JavaPlugin {
 
         test2.acceptSyncDelayed(players -> players.forEach(p -> p.sendMessage(p.getName())), 10L * 20L);
 
-
         Mesh<String> test1 = BukkitMesh.createSupplyingAsyncMesh(
                 this,
                 () -> doSomething(sender.getName()));

@@ -94,8 +94,9 @@ public final class BukkitTaskBackend implements TaskBackend {
     }
 
     @Override
-    public void setDebugMode(boolean debugMode) {
+    public @NotNull TaskBackend setDebugMode(boolean debugMode) {
         this.debugMode = debugMode;
+        return this;
     }
 
     @Override

@@ -61,8 +61,9 @@ public interface TaskBackend {
     /**
      * Sets the debug mode for the backend, which may enable additional logging features.
      * @param debugMode true to enable debug mode, false to disable it
+     * @return the current instance of TaskBackend for method chaining
      */
-    void setDebugMode(boolean debugMode);
+    @NotNull TaskBackend setDebugMode(boolean debugMode);
 
     /**
      * Logs a message at the specified logging level.
@@ -81,6 +82,7 @@ public interface TaskBackend {
      * @param delay the delay in ticks before executing the task (if zero or negative, the task will be executed immediately)
      */
     @ApiStatus.Internal
+    @ApiStatus.NonExtendable
     default void run(@NotNull Runnable runnable, @NotNull ThreadContext context, long delay) {
         if (delay <= NO_DELAY) {
             if (context == ThreadContext.ASYNC) {

@@ -3,13 +3,13 @@ package us.figt.mesh.bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import us.figt.mesh.Mesh;
+import us.figt.mesh.utils.TaskBackend;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static us.figt.mesh.bukkit.BukkitTaskBackend.of;
 
 /**
  * An implementation of the {@link Mesh} class for Bukkit plugins.
@@ -19,13 +19,15 @@ import java.util.function.Supplier;
  */
 public class BukkitMesh<T> extends Mesh<T> {
 
-    private BukkitMesh(@NotNull Plugin plugin, @NotNull CompletableFuture<T> completableFuture) {
-        super(BukkitTaskBackend.of(plugin), completableFuture);
+    private BukkitMesh(@NotNull TaskBackend backend, @NotNull CompletableFuture<T> completableFuture) {
+        super(backend, completableFuture);
     }
 
-    private BukkitMesh(@NotNull Plugin plugin, @NotNull CompletableFuture<T> completableFuture, boolean supplied, boolean cancelled) {
-        super(BukkitTaskBackend.of(plugin), completableFuture, supplied, cancelled);
+    private BukkitMesh(@NotNull TaskBackend backend, @NotNull CompletableFuture<T> completableFuture, boolean supplied, boolean cancelled) {
+        super(backend, completableFuture, supplied, cancelled);
     }
+
+
 
     /**
      * Creates an already 'completed' Mesh instance.
@@ -35,10 +37,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the completed Mesh instance
      */
     public static <T> @NotNull Mesh<T> createCompletedMesh(@NotNull Plugin plugin) {
-        BukkitMesh<T> mesh = new BukkitMesh<>(plugin, CompletableFuture.completedFuture(null));
-        mesh.getHasBeenSupplied().set(true);
-
-        return mesh;
+        return Mesh.createCompletedMesh(of(plugin));
     }
 
     /**
@@ -50,10 +49,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the completed Mesh instance
      */
     public static <T> @NotNull Mesh<T> createCompletedMesh(@NotNull Plugin plugin, T value) {
-        BukkitMesh<T> mesh = new BukkitMesh<>(plugin, CompletableFuture.completedFuture(value));
-        mesh.getHasBeenSupplied().set(true);
-
-        return mesh;
+        return Mesh.createCompletedMesh(of(plugin), value);
     }
 
     /**
@@ -64,7 +60,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the Mesh instance
      */
     public static <T> @NotNull Mesh<T> createMesh(@NotNull Plugin plugin) {
-        return new BukkitMesh<>(plugin, new CompletableFuture<>());
+        return Mesh.createMesh(of(plugin));
     }
 
     /**
@@ -76,9 +72,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the supplied Mesh instance
      */
     public static <T> @NotNull Mesh<T> createSupplyingSyncMesh(@NotNull Plugin plugin, @NotNull Supplier<T> supplier) {
-        Mesh<T> mesh = createMesh(plugin);
-
-        return mesh.supplySync(supplier);
+        return Mesh.createSupplyingSyncMesh(of(plugin), supplier);
     }
 
     /**
@@ -91,9 +85,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the supplied Mesh instance
      */
     public static <T> @NotNull Mesh<T> createSupplyingSyncDelayedMesh(@NotNull Plugin plugin, @NotNull Supplier<T> supplier, long delay) {
-        Mesh<T> mesh = createMesh(plugin);
-
-        return mesh.supplySyncDelayed(supplier, delay);
+        return Mesh.createSupplyingSyncDelayedMesh(of(plugin), supplier, delay);
     }
 
     /**
@@ -105,9 +97,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the supplied Mesh instance
      */
     public static <T> @NotNull Mesh<T> createSupplyingAsyncMesh(@NotNull Plugin plugin, @NotNull Supplier<T> supplier) {
-        Mesh<T> mesh = createMesh(plugin);
-
-        return mesh.supplyAsync(supplier);
+        return Mesh.createSupplyingAsyncMesh(of(plugin), supplier);
     }
 
     /**
@@ -120,9 +110,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @return the supplied Mesh instance
      */
     public static <T> @NotNull Mesh<T> createSupplyingAsyncDelayedMesh(@NotNull Plugin plugin, @NotNull Supplier<T> supplier, long delay) {
-        Mesh<T> mesh = createMesh(plugin);
-
-        return mesh.supplyAsyncDelayed(supplier, delay);
+        return Mesh.createSupplyingAsyncDelayedMesh(of(plugin), supplier, delay);
     }
 
 
@@ -134,42 +122,7 @@ public class BukkitMesh<T> extends Mesh<T> {
      * @param <R>    the type of the given Future and this Mesh
      * @return the new Mesh instance
      */
-    @SuppressWarnings("unchecked")
     public static <R> @NotNull Mesh<R> fromFuture(@NotNull Plugin plugin, @NotNull Future<R> future) {
-        // TODO: add comments to this method
-
-        if (future instanceof CompletableFuture<?>) {
-            return new BukkitMesh<>(plugin, ((CompletableFuture<R>) future).thenApply(Function.identity()), true, future.isCancelled());
-        }
-
-        if (future instanceof CompletionStage<?>) {
-            CompletionStage<R> stage = (CompletionStage<R>) future;
-
-            return new BukkitMesh<>(plugin, stage.toCompletableFuture().thenApply(Function.identity()));
-        }
-
-        if (future.isDone()) {
-            try {
-                // if the future is done, just create a completed mesh based on the future's value
-                return createCompletedMesh(plugin, future.get());
-            } catch (ExecutionException e) {
-                // if the computation threw an exception, create a new CompletableFuture
-                CompletableFuture<R> newFuture = new CompletableFuture<>();
-
-                // complete exceptionally using the ExecutionException thrown
-                newFuture.completeExceptionally(e);
-
-
-                // return a new Mesh based on that future
-                return new BukkitMesh<>(plugin, newFuture, true, false);
-            } catch (InterruptedException e) {
-                // uh-oh
-                BukkitTaskBackend.of(plugin).debugException(e);
-                throw new RuntimeException(e);
-            }
-        }
-
-        Mesh<R> newMesh = createMesh(plugin);
-        return newMesh.supplyCallableAsync(future::get);
+        return Mesh.fromFuture(of(plugin), future);
     }
 }
