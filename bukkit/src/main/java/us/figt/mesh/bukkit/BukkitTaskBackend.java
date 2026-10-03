@@ -8,6 +8,7 @@ import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
@@ -100,5 +101,27 @@ public final class BukkitTaskBackend implements TaskBackend {
     @Override
     public void log(@NotNull Level level, @NotNull String message) {
         this.plugin.getLogger().log(level, message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        BukkitTaskBackend that = (BukkitTaskBackend) o;
+
+        return debugMode == that.debugMode
+                && Objects.equals(plugin, that.plugin);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(plugin, debugMode);
+    }
+
+    @Override
+    public String toString() {
+        return "BukkitTaskBackend{" +
+                "plugin=" + plugin +
+                ", debugMode=" + debugMode +
+                '}';
     }
 }

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,6 +50,25 @@ final class MeshRunnables {
             }
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            WrappedRunnable<?> that = (WrappedRunnable<?>) o;
+
+            return Objects.equals(mesh, that.mesh);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(mesh);
+        }
+
+        @Override
+        public String toString() {
+            return "WrappedRunnable{" +
+                    "mesh=" + mesh +
+                    '}';
+        }
     }
 
 
@@ -71,6 +91,28 @@ final class MeshRunnables {
         public T getCompleteValue() {
             return null;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            AppliableRunnable<?> that = (AppliableRunnable<?>) o;
+            return Objects.equals(runnable, that.runnable);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), runnable);
+        }
+
+        @Override
+        public String toString() {
+            return "AppliableRunnable{" +
+                    "runnable=" + runnable +
+                    ", mesh=" + mesh +
+                    '}';
+        }
     }
 
 
@@ -88,6 +130,30 @@ final class MeshRunnables {
         @Override
         public R getCompleteValue() {
             return this.function.apply(value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            FunctionalRunnable<?, ?> that = (FunctionalRunnable<?, ?>) o;
+            return Objects.equals(function, that.function)
+                    && Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), function, value);
+        }
+
+        @Override
+        public String toString() {
+            return "FunctionalRunnable{" +
+                    "function=" + function +
+                    ", value=" + value +
+                    ", mesh=" + mesh +
+                    '}';
         }
     }
 
@@ -112,6 +178,30 @@ final class MeshRunnables {
             super.onComplete();
             this.consumer.accept(value);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            ConsumableRunnable<?, ?> that = (ConsumableRunnable<?, ?>) o;
+            return Objects.equals(consumer, that.consumer)
+                    && Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), consumer, value);
+        }
+
+        @Override
+        public String toString() {
+            return "ConsumableRunnable{" +
+                    "consumer=" + consumer +
+                    ", value=" + value +
+                    ", mesh=" + mesh +
+                    '}';
+        }
     }
 
     public static class SuppliableRunnable<T> extends WrappedRunnable<T> {
@@ -128,6 +218,28 @@ final class MeshRunnables {
         public T getCompleteValue() {
             return this.supplier.get();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            SuppliableRunnable<?> that = (SuppliableRunnable<?>) o;
+            return Objects.equals(supplier, that.supplier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), supplier);
+        }
+
+        @Override
+        public String toString() {
+            return "SuppliableRunnable{" +
+                    "supplier=" + supplier +
+                    ", mesh=" + mesh +
+                    '}';
+        }
     }
 
     public static class CallableRunnable<T> extends WrappedRunnable<T> {
@@ -143,6 +255,28 @@ final class MeshRunnables {
         @Override
         public T getCompleteValue() throws Exception {
             return this.callable.call();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            CallableRunnable<?> that = (CallableRunnable<?>) o;
+            return Objects.equals(callable, that.callable);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), callable);
+        }
+
+        @Override
+        public String toString() {
+            return "CallableRunnable{" +
+                    "callable=" + callable +
+                    ", mesh=" + mesh +
+                    '}';
         }
     }
 
@@ -174,6 +308,32 @@ final class MeshRunnables {
             }
 
             return applied == null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            ComposableRunnable<?, ?> that = (ComposableRunnable<?, ?>) o;
+            return Objects.equals(function, that.function)
+                    && Objects.equals(value, that.value)
+                    && threadContext == that.threadContext;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), function, value, threadContext);
+        }
+
+        @Override
+        public String toString() {
+            return "ComposableRunnable{" +
+                    "function=" + function +
+                    ", value=" + value +
+                    ", threadContext=" + threadContext +
+                    ", mesh=" + mesh +
+                    '}';
         }
     }
 }

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -497,5 +498,31 @@ public class Mesh<T> {
 
     public boolean hasBeenSupplied() {
         return hasBeenSupplied.get();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Mesh<?> mesh = (Mesh<?>) o;
+        return Objects.equals(backend, mesh.backend)
+                && Objects.equals(completableFuture, mesh.completableFuture)
+                && Objects.equals(hasBeenSupplied.get(), mesh.hasBeenSupplied.get())
+                && Objects.equals(isCancelled.get(), mesh.isCancelled.get());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(backend, completableFuture, hasBeenSupplied.get(), isCancelled.get());
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + '{' +
+                "backend=" + backend +
+                ", completableFuture=" + completableFuture +
+                ", hasBeenSupplied=" + hasBeenSupplied +
+                ", isCancelled=" + isCancelled +
+                '}';
     }
 }
