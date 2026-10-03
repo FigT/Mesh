@@ -13,3 +13,9 @@ dependencies {
     implementation(project(":mesh-common"))
     compileOnly(libs.spigot.api)
 }
+
+tasks.withType<Javadoc>().configureEach {
+    (options as StandardJavadocDocletOptions).apply {
+        links("https://jd.andross.fr/1.13.2")
+    }
+}

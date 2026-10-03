@@ -22,16 +22,27 @@ java {
 }
 
 tasks {
-    withType<JavaCompile> {
+    withType<JavaCompile>().configureEach {
         options.compilerArgs.add("-parameters")
         options.encoding = "UTF-8"
     }
 
-    withType<Javadoc> {
+    withType<Javadoc>().configureEach {
         options.encoding = "UTF-8"
+
+        (options as StandardJavadocDocletOptions).apply {
+            source(rootProject.ext["javaVersion"] as String)
+
+            links(
+                "https://docs.oracle.com/javase/8/docs/api/",
+                "https://javadoc.io/doc/org.jetbrains/annotations/latest/"
+            )
+
+            use()
+        }
     }
 
-    withType<ProcessResources> {
+    withType<ProcessResources>().configureEach {
         filteringCharset = "UTF-8"
     }
 
