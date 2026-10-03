@@ -63,6 +63,7 @@ public interface TaskBackend {
      * @param debugMode true to enable debug mode, false to disable it
      * @return the current instance of TaskBackend for method chaining
      */
+    @SuppressWarnings("UnusedReturnValue")
     @NotNull TaskBackend setDebugMode(boolean debugMode);
 
     /**
