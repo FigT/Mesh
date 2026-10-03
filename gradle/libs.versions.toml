@@ -5,7 +5,7 @@ jetbrains-annotations = "24.1.0"
 
 # platforms
 spigot-api = "1.13.2-R0.1-SNAPSHOT"
-velocity-api = "3.1.0"
+velocity-api = "3.4.0"
 
 [libraries]
 # utilities
