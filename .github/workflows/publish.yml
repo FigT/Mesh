@@ -4,18 +4,12 @@ on:
     types: [ published ]
   workflow_dispatch:
 
-concurrency:
-  group: "${{ github.workflow }}-${{ github.event.number || github.ref }}"
-  cancel-in-progress: true
-
 permissions:
   actions: "write"
   contents: "read"
 
 jobs:
   build:
-    # Only run on PRs if the source branch is on someone else's repo
-    if: "${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}"
     runs-on: "ubuntu-latest"
     steps:
       - name: "Checkout Repository"
@@ -36,13 +30,12 @@ jobs:
       - name: "Run Gradle Build"
         uses: "gradle/gradle-build-action@v2"
         with:
-          cache-read-only: "${{ steps.branch-name.outputs.match == '' || github.event_name == 'pull_request' }}"
           arguments: " build"
       - name: "Publish"
         run: "./gradlew nmcpPublishAggregationToCentralPortal"
         env:
           ORG_GRADLE_PROJECT_nmcpUsername: "${{ secrets.NMCP_TOKEN_USERNAME }}"
-          ORG_GRADLE_PROJECT_nmcpPassword: "${{ secrets.NMCP_TOKEN_PASSWORDF }}"
+          ORG_GRADLE_PROJECT_nmcpPassword: "${{ secrets.NMCP_TOKEN_PASSWORD }}"
           ORG_GRADLE_PROJECT_signingKey: "${{ secrets.FIG_GPG_KEY }}"
           ORG_GRADLE_PROJECT_signingKeyId: "${{ secrets.FIG_GPG_KEY_ID }}"
           ORG_GRADLE_PROJECT_signingPassword: "${{ secrets.FIG_GPG_PASSWORD }}"
