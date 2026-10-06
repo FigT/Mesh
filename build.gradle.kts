@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    sequenceOf("common", "bukkit", "velocity").forEach {
+    sequenceOf("common", "bukkit", "velocity", "sponge").forEach {
         nmcpAggregation(project(":mesh-$it"))
     }
 }
