@@ -13,14 +13,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static us.figt.mesh.utils.TaskBackend.NO_DELAY;
+import static us.figt.mesh.MeshRunnables.NO_DELAY;
 import static us.figt.mesh.utils.ThreadContext.ASYNC;
 import static us.figt.mesh.utils.ThreadContext.SYNC;
 
 /**
  * @author FigT
  */
-@SuppressWarnings("unused") // i don't want IntelliJ to yell at me
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class Mesh<T> {
 
     private final @NotNull TaskBackend backend;
@@ -179,7 +179,7 @@ public class Mesh<T> {
                 return new Mesh<>(backend, newFuture, true, false);
             } catch (InterruptedException e) {
                 // uh-oh
-                backend.debugException(e);
+                MeshRunnables.debugException(backend, e);
                 throw new RuntimeException(e);
             }
         }
@@ -530,7 +530,9 @@ public class Mesh<T> {
             completableFuture.completeExceptionally(throwable);
         }
 
-        if (backend.isDebugMode()) backend.debugException(throwable); // debug exception
+        if (backend.isDebugMode()) {
+            MeshRunnables.debugException(backend, throwable); // debug exception
+        }
     }
 
 
@@ -548,7 +550,7 @@ public class Mesh<T> {
 
     private Mesh<T> supply(Supplier<T> supplier, ThreadContext threadContext, long delay) {
         setHasBeenSupplied();
-        backend.run(new MeshRunnables.SuppliableRunnable<>(this, supplier), threadContext, delay);
+        MeshRunnables.run(backend, new MeshRunnables.SuppliableRunnable<>(this, supplier), threadContext, delay);
 
         return this;
     }
@@ -558,7 +560,7 @@ public class Mesh<T> {
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                backend.run(new MeshRunnables.FunctionalRunnable<>(newMesh, function, value), threadContext, delay);
+                MeshRunnables.run(backend, new MeshRunnables.FunctionalRunnable<>(newMesh, function, value), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -572,7 +574,7 @@ public class Mesh<T> {
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                backend.run(new MeshRunnables.AppliableRunnable<>(newMesh, runnable), threadContext, delay);
+                MeshRunnables.run(backend, new MeshRunnables.AppliableRunnable<>(newMesh, runnable), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -587,7 +589,7 @@ public class Mesh<T> {
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                backend.run(new MeshRunnables.ConsumableRunnable<>(newMesh, consumer, value), threadContext, delay);
+                MeshRunnables.run(backend, new MeshRunnables.ConsumableRunnable<>(newMesh, consumer, value), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -603,7 +605,7 @@ public class Mesh<T> {
             if (throwable == null) {
                 newMesh.complete(value);
             } else {
-                backend.run(new MeshRunnables.FunctionalRunnable<>(newMesh, function, throwable), threadContext, delay);
+                MeshRunnables.run(backend, new MeshRunnables.FunctionalRunnable<>(newMesh, function, throwable), threadContext, delay);
             }
         });
 
@@ -615,7 +617,7 @@ public class Mesh<T> {
 
         completableFuture.whenComplete((value, throwable) -> {
             if (throwable == null) {
-                backend.run(new MeshRunnables.ComposableRunnable<>(newMesh, function, value, threadContext), threadContext, delay);
+                MeshRunnables.run(backend, new MeshRunnables.ComposableRunnable<>(newMesh, function, value, threadContext), threadContext, delay);
             } else {
                 newMesh.completeExceptionally(throwable);
             }
@@ -626,7 +628,7 @@ public class Mesh<T> {
 
     private Mesh<T> supplyCallable(Callable<T> callable, ThreadContext threadContext, long delay) {
         setHasBeenSupplied();
-        backend.run(new MeshRunnables.CallableRunnable<>(this, callable), threadContext, delay);
+        MeshRunnables.run(backend, new MeshRunnables.CallableRunnable<>(this, callable), threadContext, delay);
 
         return this;
     }

@@ -1,6 +1,7 @@
 package us.figt.mesh;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
@@ -9,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 /**
  * @author FigT
@@ -16,8 +18,38 @@ import java.util.function.Supplier;
 @ApiStatus.Internal
 final class MeshRunnables {
 
+    static final long NO_DELAY = 0L;
+
     private MeshRunnables() {
         throw new AssertionError("Container class cannot be instantiated"); // seal
+    }
+
+
+    static void run(@NotNull TaskBackend backend, @NotNull Runnable runnable, @NotNull ThreadContext context, long delay) {
+        if (delay <= NO_DELAY) {
+            if (context == ThreadContext.ASYNC) {
+                backend.runAsync(runnable);
+            } else if (context == ThreadContext.SYNC) {
+                backend.runSync(runnable);
+            }
+            return;
+        }
+
+
+        if (context == ThreadContext.ASYNC) {
+            backend.runAsyncLater(runnable, delay);
+        } else if (context == ThreadContext.SYNC) {
+            backend.runSyncLater(runnable, delay);
+        }
+    }
+
+    static void debugException(@NotNull TaskBackend backend, @NotNull Throwable throwable) {
+        backend.log(
+                Level.WARNING,
+                "Mesh-" + backend.getClass().getSimpleName() + "-Debug - Caught a " + throwable.getClass().getSimpleName()
+        );
+        // noinspection CallToPrintStackTrace
+        throwable.printStackTrace();
     }
 
     public static abstract class WrappedRunnable<T> implements Runnable {
@@ -304,7 +336,7 @@ final class MeshRunnables {
             Mesh<R> applied = function.apply(value);
 
             if (applied != null) {
-                applied.accept(mesh::complete, threadContext, TaskBackend.NO_DELAY);
+                applied.accept(mesh::complete, threadContext, NO_DELAY);
             }
 
             return applied == null;

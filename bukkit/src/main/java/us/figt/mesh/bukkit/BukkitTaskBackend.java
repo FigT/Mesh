@@ -70,21 +70,11 @@ public final class BukkitTaskBackend implements TaskBackend {
 
     @Override
     public void runSyncLater(@NotNull Runnable runnable, long delay) {
-        if (delay <= NO_DELAY) {
-            runSync(runnable);
-            return;
-        }
-
         Bukkit.getScheduler().runTaskLater(this.plugin, runnable, delay);
     }
 
     @Override
     public void runAsyncLater(@NotNull Runnable runnable, long delay) {
-        if (delay <= NO_DELAY) {
-            runAsync(runnable);
-            return;
-        }
-
         Bukkit.getScheduler().runTaskLaterAsynchronously(this.plugin, runnable, delay);
     }
 
