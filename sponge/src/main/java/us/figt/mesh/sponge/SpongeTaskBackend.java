@@ -72,7 +72,7 @@ public final class SpongeTaskBackend implements TaskBackend {
     public void runSyncLater(@NotNull Runnable runnable, long delay) {
         Sponge.server().scheduler().submit(Task.builder()
                 .plugin(plugin)
-                .interval(Ticks.of(delay))
+                .delay(Ticks.of(delay))
                 .execute(runnable)
                 .build());
     }
@@ -81,7 +81,7 @@ public final class SpongeTaskBackend implements TaskBackend {
     public void runAsyncLater(@NotNull Runnable runnable, long delay) {
         Sponge.asyncScheduler().submit(Task.builder()
                 .plugin(plugin)
-                .interval(Ticks.of(delay))
+                .delay(Ticks.of(delay))
                 .execute(runnable)
                 .build());
     }
