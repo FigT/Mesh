@@ -637,12 +637,31 @@ public class Mesh<T> {
         return hasBeenSupplied;
     }
 
+    /**
+     * @return true if this Mesh has been cancelled, false otherwise
+     */
     public boolean isCancelled() {
         return isCancelled.get();
     }
 
+    /**
+     * @return true if this Mesh has been supplied, false otherwise
+     */
     public boolean hasBeenSupplied() {
         return hasBeenSupplied.get();
+    }
+
+
+    /**
+     * Creates a new Mesh instance with the same backing CompletableFuture, but with a different TaskBackend.
+     * This is useful if you want to change the backend for a Mesh without changing its state or value.
+     *
+     * @param backend the new TaskBackend to use for the new Mesh instance
+     * @return a new Mesh instance with the same data, except with a different TaskBackend
+     */
+    @ApiStatus.Experimental
+    public Mesh<T> withTaskBackend(@NotNull TaskBackend backend) {
+        return new Mesh<>(backend, completableFuture, hasBeenSupplied.get(), isCancelled.get());
     }
 
     @Override
