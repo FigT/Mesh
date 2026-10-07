@@ -8,16 +8,16 @@
 ![GitHub Code Size](https://img.shields.io/github/languages/code-size/FigT/Mesh?color=008b68&style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/FigT/Mesh?style=for-the-badge)
 
-Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts.
+Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts. It closely resembles the CompletableFuture class, except with the ability to switch between sync (main server thread) and async thread contexts, add delays between tasks, and more.
 
 Put more plainly, it's a Minecraft-based abstraction of the CompletableFuture class.
 
 
-## [Usage](https://github.com/FigT/Mesh/wiki/Usage)
+## Usage
 
 It's recommended to shade & relocate it to avoid conflicts with other plugins!
 
-Browse through the code or see examples [here](https://github.com/FigT/Mesh/tree/master/src/main/java/us/figt/mesh/example), and on the wiki page [here](https://github.com/FigT/Mesh/wiki/Usage).
+Browse through the code or an example [here](https://github.com/FigT/Mesh/blob/master/bukkit-example/src/main/java/us/figt/mesh/bukkit/example/ExamplePlugin.java), and on the wiki page [here](https://github.com/FigT/Mesh/wiki/Usage).
 
 <sub>Maven repository is on [Maven Central](https://repo1.maven.org/maven2/)</sub>
 
