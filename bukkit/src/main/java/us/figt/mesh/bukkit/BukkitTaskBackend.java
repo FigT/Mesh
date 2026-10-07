@@ -63,9 +63,10 @@ public final class BukkitTaskBackend implements TaskBackend {
     public void runSync(@NotNull Runnable runnable) {
         if (getThreadContext(Thread.currentThread()) == ThreadContext.SYNC) {
             runnable.run();
-        } else {
-            Bukkit.getScheduler().runTask(this.plugin, runnable);
+            return;
         }
+
+        Bukkit.getScheduler().runTask(this.plugin, runnable);
     }
 
     @Override
