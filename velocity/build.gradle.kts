@@ -21,6 +21,8 @@ dependencies {
 }
 
 tasks.withType<Javadoc>().configureEach {
+    options.source("17")
+
     (options as StandardJavadocDocletOptions).apply {
         links("https://jd.papermc.io/velocity/3.4.0")
     }
