@@ -65,6 +65,11 @@ public final class SpongeTaskBackend implements TaskBackend {
 
     @Override
     public void runSync(@NotNull Runnable runnable) {
+        if (getThreadContext(Thread.currentThread()) == ThreadContext.SYNC) {
+            runnable.run();
+            return;
+        }
+
         Sponge.server().scheduler().executor(plugin).execute(runnable);
     }
 
