@@ -4,6 +4,7 @@ plugins {
 
 group = "us.figt"
 version = properties["meshVersion"] as String
+description = "A library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts."
 
 val publishProjects = sequenceOf("common", "bukkit", "velocity", "sponge")
 
