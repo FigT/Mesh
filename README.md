@@ -24,11 +24,10 @@ Browse through the code or an example [here](https://github.com/FigT/Mesh/blob/m
 (More documentation and examples coming soon)
 
 ## Platforms
+Requirements:
+- Java 17+
 ### Bukkit
 This implementation of Mesh uses the BukkitScheduler to execute tasks.
-
-Requirements:
-- Java 8+
 
 Dependency:
 ```kotlin
@@ -39,9 +38,6 @@ Dependency:
 ### Sponge
 This implementation of Mesh uses the Sponge API's Scheduler to execute tasks.
 
-Requirements:
-- Java 17+
-
 Dependency:
 ```kotlin
     implementation("us.figt:mesh-sponge:<version>")
@@ -50,9 +46,6 @@ Dependency:
 
 ### Velocity
 This implementation of Mesh uses Velocity's Scheduler to execute tasks, although as Velocity doesn't have a "main" thread, all tasks are executed "asynchronously" (that is, not on a main thread). This exists just to allow Mesh to be used in multiple scenarios.
-
-Requirements:
-- Java 17+
 
 Dependency:
 ```kotlin
@@ -63,7 +56,7 @@ Dependency:
 
 ## Building
 ### Requirements
-- Java 17 (even though some implementations use Java 8, we use Java 17 for building with Gradle)
+- Java 17+
 
 Use `gradlew build` to build all modules
 

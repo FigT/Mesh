@@ -16,6 +16,6 @@ dependencies {
 
 tasks.withType<Javadoc>().configureEach {
     (options as StandardJavadocDocletOptions).apply {
-        links("https://jd.andross.fr/1.13.2")
+        links("https://hub.spigotmc.org/javadocs/bukkit/")
     }
 }

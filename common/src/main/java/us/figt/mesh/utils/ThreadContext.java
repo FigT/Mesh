@@ -7,5 +7,13 @@ package us.figt.mesh.utils;
  */
 public enum ThreadContext {
 
-    SYNC, ASYNC;
+    /**
+     * This context represents a synchronous thread execution, that is, on the main thread of the application
+     */
+    SYNC,
+
+    /**
+     * This context represents an asynchronous thread execution, that is, on a separate thread from the main thread of the application
+     */
+    ASYNC;
 }

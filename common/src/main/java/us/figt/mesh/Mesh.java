@@ -28,11 +28,25 @@ public class Mesh<T> {
     private final @NotNull AtomicBoolean hasBeenSupplied = new AtomicBoolean(false);
     private final @NotNull AtomicBoolean isCancelled = new AtomicBoolean(false);
 
+    /**
+     * Creates a new Mesh instance with the given TaskBackend and CompletableFuture.
+     *
+     * @param backend the {@link TaskBackend} to fulfil the tasks for this Mesh
+     * @param completableFuture the backing CompletableFuture for this Mesh
+     */
     protected Mesh(@NotNull TaskBackend backend, @NotNull CompletableFuture<T> completableFuture) {
         this.backend = backend;
         this.completableFuture = completableFuture;
     }
 
+    /**
+     * Creates a new Mesh instance with the given TaskBackend, CompletableFuture, and flags for whether it has been supplied or cancelled.
+     *
+     * @param backend the {@link TaskBackend} to fulfil the tasks for this Mesh
+     * @param completableFuture the backing CompletableFuture for this Mesh
+     * @param supplied whether this Mesh has been supplied
+     * @param cancelled whether this Mesh has been cancelled
+     */
     protected Mesh(@NotNull TaskBackend backend, @NotNull CompletableFuture<T> completableFuture, boolean supplied, boolean cancelled) {
         this(backend, completableFuture);
 
@@ -536,6 +550,9 @@ public class Mesh<T> {
     }
 
 
+    /**
+     * @return the backing CompletableFuture for this Mesh
+     */
     public @NotNull CompletableFuture<T> toCompletableFuture() {
         return completableFuture.thenApply(Function.identity());
     }
@@ -633,6 +650,10 @@ public class Mesh<T> {
         return this;
     }
 
+    /**
+     * @return the AtomicBoolean that tracks whether this Mesh has been supplied
+     */
+    @ApiStatus.Internal
     protected @NotNull AtomicBoolean getHasBeenSupplied() {
         return hasBeenSupplied;
     }

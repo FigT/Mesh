@@ -34,8 +34,8 @@ tasks {
             source(rootProject.ext["javaVersion"] as String)
 
             links(
-                "https://docs.oracle.com/javase/8/docs/api/",
-                "https://javadoc.io/doc/org.jetbrains/annotations/latest/"
+                "https://docs.oracle.com/en/java/javase/17/docs/api/",
+                "https://javadoc.io/doc/org.jetbrains/annotations/26.1.0/"
             )
 
             use()
