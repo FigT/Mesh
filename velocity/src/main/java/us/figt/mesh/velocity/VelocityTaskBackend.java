@@ -7,8 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.figt.mesh.utils.TaskBackend;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -17,15 +16,11 @@ import java.util.logging.Level;
  *
  * @author FigT
  */
-public final class VelocityTaskBackend implements TaskBackend {
-
-    private static final @NotNull Map<@NotNull String, @NotNull VelocityTaskBackend> BACKENDS = new ConcurrentHashMap<>();
+public final class VelocityTaskBackend extends TaskBackend {
 
     private final @NotNull PluginContainer plugin;
     private final @NotNull ProxyServer proxy;
     private final @NotNull Logger logger;
-
-    private boolean debugMode = false;
 
     private VelocityTaskBackend(@NotNull PluginContainer plugin, @NotNull ProxyServer proxy) {
         this.plugin = plugin;
@@ -42,12 +37,12 @@ public final class VelocityTaskBackend implements TaskBackend {
      * @return the {@link VelocityTaskBackend} instance for the provided plugin
      */
     public static VelocityTaskBackend of(@NotNull PluginContainer plugin, @NotNull ProxyServer proxy) {
-        return BACKENDS.computeIfAbsent(plugin.getDescription().getId(), name -> new VelocityTaskBackend(plugin, proxy));
+        return computeBackendIfAbsent(VelocityTaskBackend.class, plugin.getDescription().getId(), () -> new VelocityTaskBackend(plugin, proxy));
     }
 
     @Override
     public void runAsync(@NotNull Runnable runnable) {
-        proxy.getScheduler().buildTask(getPluginInstance(), runnable)
+        this.proxy.getScheduler().buildTask(getPluginInstance(), runnable)
                 .schedule();
     }
 
@@ -67,38 +62,49 @@ public final class VelocityTaskBackend implements TaskBackend {
     public void runAsyncLater(@NotNull Runnable runnable, long delay) {
         // the delay is in ticks, and Velocity's scheduler uses milliseconds,
         // so we multiply by 50 (1 tick = 50 ms)
-        proxy.getScheduler().buildTask(getPluginInstance(), runnable)
+        this.proxy.getScheduler().buildTask(getPluginInstance(), runnable)
                 .delay(delay * 50L, TimeUnit.MILLISECONDS)
                 .schedule();
     }
 
     @Override
-    public boolean isDebugMode() {
-        return this.debugMode;
-    }
-
-    @Override
-    public @NotNull TaskBackend setDebugMode(boolean debugMode) {
-        this.debugMode = debugMode;
-        return this;
-    }
-
-    @Override
     public void log(@NotNull Level level, @NotNull String message) {
-        // this is a gross mapping,
-        // but we're using JDK 8 so we can't use enhanced switch statements
-        if (level == Level.INFO) {
-            logger.info(message);
-        } else if (level == Level.WARNING) {
-            logger.warn(message);
-        } else if (level == Level.SEVERE) {
-            logger.error(message);
-        } else {
-            logger.debug(message);
+        switch (level.getName()) {
+            case "SEVERE" -> this.logger.error(message);
+            case "WARNING" -> this.logger.warn(message);
+            case "CONFIG" -> this.logger.debug(message);
+            case "FINE", "FINER", "FINEST" -> this.logger.trace(message);
+            default -> this.logger.info(message);
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        VelocityTaskBackend that = (VelocityTaskBackend) o;
+        return Objects.equals(this.plugin, that.plugin)
+                && Objects.equals(this.proxy, that.proxy)
+                && Objects.equals(this.logger, that.logger);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.plugin, this.proxy, this.logger);
+    }
+
+    @Override
+    public String toString() {
+        return "VelocityTaskBackend{" +
+                "plugin=" + this.plugin +
+                ", proxy=" + this.proxy +
+                ", logger=" + this.logger +
+                ", debugMode=" + this.isDebugMode() +
+                '}';
+    }
+
     private @NotNull Object getPluginInstance() {
-        return plugin.getInstance().orElseThrow(() -> new IllegalStateException("Plugin instance is not available"));
+        return this.plugin.getInstance().orElseThrow(() -> new IllegalStateException("Plugin instance is not available"));
     }
 }

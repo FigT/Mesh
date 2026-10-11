@@ -7,9 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
@@ -17,13 +15,11 @@ import java.util.logging.Level;
  *
  * @author FigT
  */
-public final class BukkitTaskBackend implements TaskBackend {
+public final class BukkitTaskBackend extends TaskBackend {
 
     private static @Nullable Thread MAIN_THREAD;
-    private static final @NotNull Map<@NotNull String, @NotNull BukkitTaskBackend> BACKENDS = new ConcurrentHashMap<>();
 
     private final @NotNull Plugin plugin;
-    private boolean debugMode = false;
 
     private BukkitTaskBackend(@NotNull Plugin plugin) {
         this.plugin = plugin;
@@ -37,7 +33,7 @@ public final class BukkitTaskBackend implements TaskBackend {
      * @return the {@link BukkitTaskBackend} instance for the provided plugin
      */
     public static BukkitTaskBackend of(@NotNull Plugin plugin) {
-        return BACKENDS.computeIfAbsent(plugin.getName(), name -> new BukkitTaskBackend(plugin));
+        return computeBackendIfAbsent(BukkitTaskBackend.class, plugin.getName(), () -> new BukkitTaskBackend(plugin));
     }
 
     /**
@@ -80,17 +76,6 @@ public final class BukkitTaskBackend implements TaskBackend {
     }
 
     @Override
-    public boolean isDebugMode() {
-        return this.debugMode;
-    }
-
-    @Override
-    public @NotNull TaskBackend setDebugMode(boolean debugMode) {
-        this.debugMode = debugMode;
-        return this;
-    }
-
-    @Override
     public void log(@NotNull Level level, @NotNull String message) {
         this.plugin.getLogger().log(level, message);
     }
@@ -98,22 +83,22 @@ public final class BukkitTaskBackend implements TaskBackend {
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        BukkitTaskBackend that = (BukkitTaskBackend) o;
+        if (!super.equals(o)) return false;
 
-        return debugMode == that.debugMode
-                && Objects.equals(plugin, that.plugin);
+        BukkitTaskBackend that = (BukkitTaskBackend) o;
+        return Objects.equals(this.plugin, that.plugin);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(plugin, debugMode);
+        return Objects.hash(super.hashCode(), this.plugin);
     }
 
     @Override
     public String toString() {
         return "BukkitTaskBackend{" +
-                "plugin=" + plugin +
-                ", debugMode=" + debugMode +
+                "plugin=" + this.plugin +
+                ", debugMode=" + this.isDebugMode() +
                 '}';
     }
 }

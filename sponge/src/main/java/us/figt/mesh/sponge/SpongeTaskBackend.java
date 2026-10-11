@@ -9,9 +9,7 @@ import org.spongepowered.plugin.PluginContainer;
 import us.figt.mesh.utils.TaskBackend;
 import us.figt.mesh.utils.ThreadContext;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
 import java.util.logging.Level;
 
 /**
@@ -19,13 +17,11 @@ import java.util.logging.Level;
  *
  * @author FigT
  */
-public final class SpongeTaskBackend implements TaskBackend {
+public final class SpongeTaskBackend extends TaskBackend {
 
     private static @Nullable Thread MAIN_THREAD;
-    private static final @NotNull Map<@NotNull String, @NotNull SpongeTaskBackend> BACKENDS = new ConcurrentHashMap<>();
 
     private final @NotNull PluginContainer plugin;
-    private boolean debugMode;
 
     private SpongeTaskBackend(@NotNull PluginContainer plugin) {
         this.plugin = plugin;
@@ -39,7 +35,11 @@ public final class SpongeTaskBackend implements TaskBackend {
      * @return the {@link SpongeTaskBackend} instance for the provided plugin
      */
     public static @NotNull SpongeTaskBackend of(@NotNull PluginContainer plugin) {
-        return BACKENDS.computeIfAbsent(plugin.metadata().id(), id -> new SpongeTaskBackend(plugin));
+        return computeBackendIfAbsent(
+                SpongeTaskBackend.class,
+                plugin.metadata().id(),
+                () -> new SpongeTaskBackend(plugin)
+        );
     }
 
     /**
@@ -60,7 +60,7 @@ public final class SpongeTaskBackend implements TaskBackend {
 
     @Override
     public void runAsync(@NotNull Runnable runnable) {
-        Sponge.asyncScheduler().executor(plugin).execute(runnable);
+        Sponge.asyncScheduler().executor(this.plugin).execute(runnable);
     }
 
     @Override
@@ -70,13 +70,13 @@ public final class SpongeTaskBackend implements TaskBackend {
             return;
         }
 
-        Sponge.server().scheduler().executor(plugin).execute(runnable);
+        Sponge.server().scheduler().executor(this.plugin).execute(runnable);
     }
 
     @Override
     public void runSyncLater(@NotNull Runnable runnable, long delay) {
         Sponge.server().scheduler().submit(Task.builder()
-                .plugin(plugin)
+                .plugin(this.plugin)
                 .delay(Ticks.of(delay))
                 .execute(runnable)
                 .build());
@@ -85,21 +85,10 @@ public final class SpongeTaskBackend implements TaskBackend {
     @Override
     public void runAsyncLater(@NotNull Runnable runnable, long delay) {
         Sponge.asyncScheduler().submit(Task.builder()
-                .plugin(plugin)
+                .plugin(this.plugin)
                 .delay(Ticks.of(delay))
                 .execute(runnable)
                 .build());
-    }
-
-    @Override
-    public boolean isDebugMode() {
-        return this.debugMode;
-    }
-
-    @Override
-    public @NotNull TaskBackend setDebugMode(boolean debugMode) {
-        this.debugMode = debugMode;
-        return this;
     }
 
     @Override
@@ -111,6 +100,28 @@ public final class SpongeTaskBackend implements TaskBackend {
             default -> org.apache.logging.log4j.Level.INFO;
         };
 
-        plugin.logger().log(log4jLevel, message);
+        this.plugin.logger().log(log4jLevel, message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        SpongeTaskBackend that = (SpongeTaskBackend) o;
+        return Objects.equals(this.plugin, that.plugin);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.plugin);
+    }
+
+    @Override
+    public String toString() {
+        return "SpongeTaskBackend{" +
+                "plugin=" + this.plugin +
+                ", debugMode=" + this.isDebugMode() +
+                '}';
     }
 }
