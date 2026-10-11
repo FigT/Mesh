@@ -1,0 +1,104 @@
+package us.figt.mesh.bukkit;
+
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import us.figt.mesh.utils.TaskBackend;
+import us.figt.mesh.utils.ThreadContext;
+
+import java.util.Objects;
+import java.util.logging.Level;
+
+/**
+ * A {@link org.bukkit.scheduler.BukkitScheduler}-based implementation of the {@link TaskBackend} interface.
+ *
+ * @author FigT
+ */
+public final class BukkitTaskBackend extends TaskBackend {
+
+    private static @Nullable Thread MAIN_THREAD;
+
+    private final @NotNull Plugin plugin;
+
+    private BukkitTaskBackend(@NotNull Plugin plugin) {
+        this.plugin = plugin;
+    }
+
+    /**
+     * Gets the {@link BukkitTaskBackend} instance for the provided plugin.
+     * If an instance does not already exist for the plugin, a new one will be created and stored.
+     *
+     * @param plugin the providing plugin for which to get the {@link BukkitTaskBackend} instance
+     * @return the {@link BukkitTaskBackend} instance for the provided plugin
+     */
+    public static BukkitTaskBackend of(@NotNull Plugin plugin) {
+        return computeBackendIfAbsent(BukkitTaskBackend.class, plugin.getName(), () -> new BukkitTaskBackend(plugin));
+    }
+
+    /**
+     * Gets the {@link ThreadContext} for the provided thread.
+     *
+     * @param thread the thread for which to get the {@link ThreadContext}
+     * @return the {@link ThreadContext} for the provided thread
+     */
+    public static synchronized @NotNull ThreadContext getThreadContext(@NotNull Thread thread) {
+        if (MAIN_THREAD == null && Bukkit.getServer().isPrimaryThread()) {
+            MAIN_THREAD = Thread.currentThread();
+        }
+
+        return thread.equals(MAIN_THREAD) ? ThreadContext.SYNC : ThreadContext.ASYNC;
+    }
+
+    @Override
+    public void runAsync(@NotNull Runnable runnable) {
+        Bukkit.getScheduler().runTaskAsynchronously(this.plugin, runnable);
+    }
+
+    @Override
+    public void runSync(@NotNull Runnable runnable) {
+        if (getThreadContext(Thread.currentThread()) == ThreadContext.SYNC) {
+            runnable.run();
+            return;
+        }
+
+        Bukkit.getScheduler().runTask(this.plugin, runnable);
+    }
+
+    @Override
+    public void runSyncLater(@NotNull Runnable runnable, long delay) {
+        Bukkit.getScheduler().runTaskLater(this.plugin, runnable, delay);
+    }
+
+    @Override
+    public void runAsyncLater(@NotNull Runnable runnable, long delay) {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(this.plugin, runnable, delay);
+    }
+
+    @Override
+    public void log(@NotNull Level level, @NotNull String message) {
+        this.plugin.getLogger().log(level, message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        BukkitTaskBackend that = (BukkitTaskBackend) o;
+        return Objects.equals(this.plugin, that.plugin);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), this.plugin);
+    }
+
+    @Override
+    public String toString() {
+        return "BukkitTaskBackend{" +
+                "plugin=" + this.plugin +
+                ", debugMode=" + this.isDebugMode() +
+                '}';
+    }
+}

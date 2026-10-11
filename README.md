@@ -4,33 +4,61 @@
 <img src="/.github/mesh-logo.svg" alt="logo" width="1024" height="256"/>
 
 
-![Maven Central Version](https://img.shields.io/maven-central/v/us.figt/Mesh?style=for-the-badge)
+![Maven Central Version](https://img.shields.io/maven-central/v/us.figt/mesh-common?style=for-the-badge)
 ![GitHub Code Size](https://img.shields.io/github/languages/code-size/FigT/Mesh?color=008b68&style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/FigT/Mesh?style=for-the-badge)
 
-Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts.
+Mesh is a library that allows you to 'mesh' together a series of tasks, whilst switching thread contexts. It closely resembles the CompletableFuture class, except with the ability to switch between sync (main server thread) and async thread contexts, add delays between tasks, and more.
 
-Put more plainly, it's a Spigot-based abstraction of the CompletableFuture class.
-
-
-## [Usage](https://github.com/FigT/Mesh/wiki/Usage)
-
-#### Maven
-Recommended to shade & relocate it to avoid conflicts with other plugins!
+Put more plainly, it's a Minecraft-based abstraction of the CompletableFuture class.
 
 
-```xml
-	<dependency>
-	    <groupId>us.figt</groupId>
-	    <artifactId>Mesh</artifactId>
-	    <version>VERSION</version>
-	</dependency>
-```
+## Usage
+
+It's recommended to shade & relocate it to avoid conflicts with other plugins!
+
+Browse through the code or an example [here](https://github.com/FigT/Mesh/blob/master/bukkit-example/src/main/java/us/figt/mesh/bukkit/example/ExamplePlugin.java), and on the wiki page [here](https://github.com/FigT/Mesh/wiki/Usage).
+
 <sub>Maven repository is on [Maven Central](https://repo1.maven.org/maven2/)</sub>
 
-Browse through the code or see examples [here](https://github.com/FigT/Mesh/tree/master/src/main/java/us/figt/mesh/example), and on the wiki page [here](https://github.com/FigT/Mesh/wiki/Usage).
-
 (More documentation and examples coming soon)
+
+## Platforms
+Requirements:
+- Java 17+
+### Bukkit
+This implementation of Mesh uses the BukkitScheduler to execute tasks.
+
+Dependency:
+```kotlin
+    implementation("us.figt:mesh-bukkit:<version>")
+```
+<br>
+
+### Sponge
+This implementation of Mesh uses the Sponge API's Scheduler to execute tasks.
+
+Dependency:
+```kotlin
+    implementation("us.figt:mesh-sponge:<version>")
+```
+<br>
+
+### Velocity
+This implementation of Mesh uses Velocity's Scheduler to execute tasks, although as Velocity doesn't have a "main" thread, all tasks are executed "asynchronously" (that is, not on a main thread). This exists just to allow Mesh to be used in multiple scenarios.
+
+Dependency:
+```kotlin
+    implementation("us.figt:mesh-velocity:<version>")
+```
+<br>
+
+
+## Building
+### Requirements
+- Java 17+
+
+Use `gradlew build` to build all modules
 
 ## Contributing
 

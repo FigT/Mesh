@@ -1,0 +1,18 @@
+[versions]
+
+# utilities
+jetbrains-annotations = "24.1.0"
+
+# platforms
+spigot-api = "1.13.2-R0.1-SNAPSHOT"
+velocity-api = "3.4.0"
+sponge-api = "9.0.0"
+
+[libraries]
+# utilities
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+
+# platforms
+spigot-api = { module = "org.spigotmc:spigot-api", version.ref = "spigot-api" }
+velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }
+sponge-api = { module = "org.spongepowered:spongeapi", version.ref = "sponge-api" }
