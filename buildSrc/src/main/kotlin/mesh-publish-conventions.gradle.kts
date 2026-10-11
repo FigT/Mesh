@@ -7,8 +7,6 @@ plugins {
     id("com.gradleup.nmcp")
 }
 
-extra["isReleaseVersion"] = !project.version.toString().endsWith("SNAPSHOT")
-
 java {
     withSourcesJar()
     withJavadocJar()
@@ -71,7 +69,7 @@ publishing {
 
 signing {
     setRequired( {
-        (project.extra["isReleaseVersion"] as Boolean) && gradle.taskGraph.hasTask("publish")
+        !gradle.taskGraph.allTasks.any { it.name.contains("ToMavenLocal") }
     })
 
     val signingKeyId = project.findProperty("signingKeyId") as String?
