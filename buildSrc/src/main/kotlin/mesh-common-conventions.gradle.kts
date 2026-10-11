@@ -39,6 +39,7 @@ tasks {
             )
 
             use()
+            author()
         }
     }
 

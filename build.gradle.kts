@@ -5,6 +5,8 @@ plugins {
 group = "us.figt"
 version = properties["meshVersion"] as String
 
+val publishProjects = sequenceOf("common", "bukkit", "velocity", "sponge")
+
 nmcpAggregation {
     centralPortal {
         val nmcpUsername = properties["nmcpUsername"]
@@ -22,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    sequenceOf("common", "bukkit", "velocity", "sponge").forEach {
+    publishProjects.forEach {
         nmcpAggregation(project(":mesh-$it"))
     }
 }
