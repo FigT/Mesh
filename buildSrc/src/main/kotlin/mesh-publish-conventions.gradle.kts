@@ -68,15 +68,14 @@ publishing {
 }
 
 signing {
-    setRequired( {
-        !gradle.taskGraph.allTasks.any { it.name.contains("ToMavenLocal") }
-    })
+    setRequired {
+        !project.version.toString().endsWith("-SNAPSHOT")
+    }
 
-    val signingKeyId = project.findProperty("signingKeyId") as String?
-    val signingKey = project.findProperty("signingKey") as String?
-    val signingPassword = project.findProperty("signingPassword") as String?
+    val signingKeyId = providers.gradleProperty("signingKeyId").orNull
+    val signingKey = providers.gradleProperty("signingKey").orNull
+    val signingPassword = providers.gradleProperty("signingPassword").orNull
 
     useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-
     sign(publishing.publications["mavenJava"])
 }
